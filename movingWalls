@@ -1,0 +1,66 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class movingWalls : MonoBehaviour
+{
+    public Transform minPos;
+    public Transform maxPos;
+
+    public bool isLeftorRight = false;
+    public bool movingForward = false;
+
+    public float moveSpeed;
+
+    void Start()
+    {
+        //Horizontal Walls
+        if (isLeftorRight)
+        {
+            transform.position = maxPos.position;
+            movingForward = false;
+        }
+        //Vertical Walls
+        else
+        {
+            transform.position = minPos.position;
+            movingForward = true;
+        }
+    }
+
+    void Update()
+    {
+        if (isLeftorRight)
+        {
+            if (movingForward)
+            {
+                transform.Translate(Vector3.forward * Time.deltaTime * moveSpeed);
+            }
+            else
+            {
+                transform.Translate(Vector3.back * Time.deltaTime * moveSpeed);
+            }
+
+            if (transform.position.z < minPos.position.z || transform.position.z > maxPos.position.z)
+            {
+                movingForward = !movingForward;
+            }
+        }
+        else
+        {
+            if (movingForward)
+            {
+                transform.Translate(Vector3.right * Time.deltaTime * moveSpeed);
+            }
+            else
+            {
+                transform.Translate(Vector3.left * Time.deltaTime * moveSpeed);
+            }
+
+            if (transform.position.x < minPos.position.x || transform.position.x > maxPos.position.x)
+            {
+                movingForward = !movingForward;
+            }
+        }
+    }
+}
