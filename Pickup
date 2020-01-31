@@ -1,0 +1,22 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Pickup : MonoBehaviour
+{
+    [Header("Rotation")]
+    [Tooltip("The speed of rotation")]
+    public float rotationSpeed;
+    private float newYAngle;
+
+    private void Update()
+    {
+        newYAngle = Time.deltaTime * rotationSpeed;
+        transform.Rotate(0, newYAngle, 0);
+
+        if (newYAngle >= 360)
+        {
+            newYAngle = 1;
+        }
+    }
+}
