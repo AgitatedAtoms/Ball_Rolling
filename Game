@@ -1,0 +1,398 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+public class Game : MonoBehaviour
+{
+    [Header("Player")]
+    [Tooltip("The player's game object")]
+    public GameObject player;
+    [Tooltip("The starting position of the level")]
+    public Transform startPos;
+    [Tooltip("The finishing position of the level")]
+    public Transform endPos;
+    [Tooltip("The radius the player needs to be within to finish the level")]
+    public float endPosRadius;
+
+    [Space(10)]
+
+    [Header("Canvas")]
+    [Tooltip("Canvas of GUI")]
+    public Canvas GUI;
+
+    [Space(10)]
+
+    [Header("Score")]
+    public int score;
+    [Tooltip("The text which displays the score")]
+    public Text scoreTxt;
+
+    [Space(10)]
+
+    [Header("Timer")]
+    [Tooltip("Level's countdown")]
+    public int maxTime;
+    private float timeLeft;
+    [Tooltip("The counter's text")]
+    public Text timeText;
+    [Tooltip("The timer's display bar")]
+    public Slider timeBar;
+
+    [Space(10)]
+
+    [Header("Menus")]
+    [Tooltip("The game's pause menu")]
+    public GameObject pauseMenu;
+    [Tooltip("The game's options menu")]
+    public GameObject optionsMenu;
+    [Tooltip("The game's lose menu")]
+    public GameObject lostMenu;
+    [Tooltip("The game's win menu")]
+    public GameObject gameWinMenu;
+
+    [Space(10)]
+
+    [Header("Pause Menu")]
+    [Tooltip("The pause menu's play button")]
+    public Button playButton;
+    [Tooltip("The pause menu's options button")]
+    public Button optionsButton;
+    [Tooltip("The pause menu's quit to start menu button")]
+    public Button pauseStartMenuButton;
+
+    [Space(10)]
+
+    [Header("Options Menu")]
+    [Tooltip("The dropdown to select game's resolution")]
+    public Dropdown resolutionDropdown;
+    [Tooltip("The valid resolutions which payer can choose")]
+    private Resolution[] resolutionList;
+    [Tooltip("The options menu's back to pause menu button")]
+    public Button optionsBackButton;
+
+    [Space(10)]
+
+    [Header("Background Music")]
+    [Tooltip("The background music played")]
+    public AudioSource backgroundMusic;
+    [Tooltip("The background music's volume slider")]
+    public Slider backMusicSlider;
+
+    [Space(10)]
+
+    [Header("New Level's Sound Effect")]
+    [Tooltip("The new level sound effect played")]
+    public AudioSource newLevelSound;
+    [Tooltip("The new level effect's volume slider")]
+    public Slider newLevelSoundSlider;
+
+    [Space(10)]
+
+    [Header("Lose Menu")]
+    [Tooltip("If player has died")]
+    public bool isDead = false;
+    private GameObject loseTitle;
+    private Text youLoseTxt;
+    [Tooltip("On lose menu, player's score displayed")]
+    public Text loseScore;
+    [Tooltip("The lose menu's retry game button")]
+    public Button loseRetryButton;
+    [Tooltip("The lose menu's back to start menu button")]
+    public Button loseStartMenuButton;
+
+    [Space(10)]
+
+    [Header("Win Menu")]
+    public bool finished = false;
+    private GameObject winTitle;
+    private Text youWinText;
+    [Tooltip("The win menu's score text")]
+    public Text winScore;
+    [Tooltip("The win menu's game retry button")]
+    public Button winRetryButton;
+    [Tooltip("The win menu to start button")]
+    public Button winStartMenuButton;
+
+    [Space(10)]
+
+    [Header("Levels")]
+    [Tooltip("The game's levels")]
+    public GameObject[] levels;
+    private int curLevel;
+
+
+
+    void Start()
+    {
+        foreach(GameObject level in levels)
+        {
+            level.SetActive(false);
+        }
+
+        Time.timeScale = 1;
+        levels[0].gameObject.SetActive(true);
+
+        //Set Player's Start Position
+        player.transform.position = startPos.position;
+
+        //Active UI
+        {
+            //Menu Overlays
+            pauseMenu.SetActive(false);
+            optionsMenu.SetActive(false);
+            lostMenu.SetActive(false);
+            gameWinMenu.SetActive(false);
+        }
+
+        //Music & Effects Volume
+        {
+            backMusicSlider.value = backgroundMusic.volume;
+            newLevelSoundSlider.value = newLevelSound.volume;
+        }
+
+        //Buttons
+        {
+            //Pause Menu
+            {
+                //Play fron Pause Menu
+                playButton = playButton.GetComponent<Button>();
+                playButton.onClick.AddListener(onPlay);
+
+                //Options from Pause Menu
+                optionsButton = optionsButton.GetComponent<Button>();
+                optionsButton.onClick.AddListener(onOptions);
+
+                //Start from Pause Menu
+                pauseStartMenuButton = pauseStartMenuButton.GetComponent<Button>();
+                pauseStartMenuButton.onClick.AddListener(onStartMenu);
+            }
+
+            //Options Menu
+            {
+                //Back to Pause Menu
+                optionsBackButton = optionsBackButton.GetComponent<Button>();
+                optionsBackButton.onClick.AddListener(onBack);
+            }
+
+            //Lose Overlay
+            {
+                //Retry Game
+                loseRetryButton = loseRetryButton.GetComponent<Button>();
+                loseRetryButton.onClick.AddListener(onRetry);
+
+                //Lost to Start Menu
+                loseStartMenuButton = loseStartMenuButton.GetComponent<Button>();
+                loseStartMenuButton.onClick.AddListener(onStartMenu);
+            }
+
+            //Win Overlay
+            {
+                //Retry Game
+                winRetryButton = winRetryButton.GetComponent<Button>();
+                winRetryButton.onClick.AddListener(onRetry);
+
+                //Win to Start Menu
+                winStartMenuButton = winStartMenuButton.GetComponent<Button>();
+                winStartMenuButton.onClick.AddListener(onStartMenu);
+            }
+        }
+
+        //Get Resolution Options
+        {
+            resolutionDropdown.onValueChanged.AddListener(delegate { onResolution(); });
+            resolutionDropdown.ClearOptions();
+
+            resolutionList = Screen.resolutions;
+            foreach (Resolution resolution in resolutionList)
+            {
+                resolutionDropdown.options.Add(new Dropdown.OptionData(resolution.ToString()));
+            }
+        }
+
+        //Score & Time
+        {
+            score = 0;
+            scoreTxt.text = "SCORE: " + score;
+
+            timeLeft = maxTime;
+            timeBar.maxValue = timeLeft;
+            timeBar.value = timeLeft;
+        }
+    }
+
+
+    void Update()
+    {
+        //Pause
+        {
+            if (Input.GetKey(KeyCode.Escape))
+            {
+                Time.timeScale = 0;
+
+                pauseMenu.SetActive(true);
+                optionsMenu.SetActive(false);
+            }
+        }
+
+        //Volumes
+        {
+            backgroundMusic.volume = backMusicSlider.value;
+            newLevelSound.volume = newLevelSoundSlider.value;
+        }
+
+        //Lose
+        {
+            if (timeLeft <= 0.0f || isDead)
+            {
+                Time.timeScale = 0;
+
+                gameLose();
+            }
+        }
+
+        //Win Level
+        {
+            //If the player reaches the end position with time left, then they win
+            if(Vector3.Distance(player.transform.position, endPos.position) <= endPosRadius && timeLeft > 0)
+            {
+                if((curLevel + 1) == levels.Length)
+                {
+                    winGame();
+                }
+                else
+                {
+                    loadNewLevel();
+                }
+            }
+            //Timer
+            else
+            {
+                if (timeLeft > 0.0)
+                {
+                    timeLeft -= Time.deltaTime;
+                }
+                timeBar.value = timeLeft;
+                timeText.text = timeLeft.ToString("F2");
+            }
+        }
+    }
+
+
+
+    //On Score Increase
+    public void upScore()
+    {
+        score++;
+        scoreTxt.text = "SCORE: " + score;
+        newLevelSound.Play();
+    }
+
+
+    //Unload Current Level and Load New Level
+    void loadNewLevel()
+    {
+        //Unload finished level;
+        levels[curLevel].gameObject.SetActive(false);
+
+        //Change to new level
+        curLevel++;
+
+        //Load new level
+        levels[curLevel].gameObject.SetActive(true);
+
+
+        //Reset Timer
+        timeLeft = maxTime;
+        timeBar.maxValue = maxTime;
+
+
+        //Restart player's position to start position
+        player.transform.position = startPos.position;
+
+        //Stop player's speed by freezing player
+        player.GetComponent<Rigidbody>().isKinematic = true;
+        //Start player's speed by unfreezing player
+        player.GetComponent<Rigidbody>().isKinematic = false;
+    }
+
+
+    void gameLose()
+    {
+        Time.timeScale = 0;
+
+        player.SetActive(false);
+        pauseMenu.SetActive(false);
+        optionsMenu.SetActive(false);
+        gameWinMenu.SetActive(false);
+
+        lostMenu.SetActive(true);
+
+        loseScore.text = "SCORE: " + score + "/20";
+    }
+
+    //If the player wins the game
+    void winGame()
+    {
+        Time.timeScale = 0;
+
+        player.SetActive(false);
+        pauseMenu.SetActive(false);
+        optionsMenu.SetActive(false);
+        lostMenu.SetActive(false);
+
+        gameWinMenu.SetActive(true);
+
+        winScore.text = "SCORE: " + score + "/20";
+    }
+
+    //Unity Editing Help
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.black;
+        Gizmos.DrawWireSphere(endPos.position, endPosRadius);
+    }
+
+
+    //---------------------------BUTTONS---------------------------\\
+
+    //Pause Menu's Play Button
+    void onPlay()
+    {
+        Time.timeScale = 1;
+
+        pauseMenu.SetActive(false);
+        optionsMenu.SetActive(false);
+    }
+
+    //Pause Menu to Options Menu
+    void onOptions()
+    {
+        pauseMenu.SetActive(false);
+        optionsMenu.SetActive(true);
+    }
+    //Option's Resolution Change
+    void onResolution()
+    {
+        Screen.SetResolution(resolutionList[resolutionDropdown.value].width, resolutionList[resolutionDropdown.value].height, Screen.fullScreen);
+    }
+    //Option to Pause Menu Button
+    void onBack()
+    {
+        optionsMenu.SetActive(false);
+        pauseMenu.SetActive(true);
+    }
+
+    //Death's Retry Game Button
+    void onRetry()
+    {
+        SceneManager.LoadScene("MiniGame");
+    }
+    //Death's Start Menu Button
+    void onStartMenu()
+    {
+        SceneManager.LoadScene("Start Menu");
+    }
+}
