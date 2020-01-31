@@ -1,0 +1,63 @@
+using UnityEngine;
+using System.Collections;
+
+public class playerController : MonoBehaviour 
+{	
+    [Header("Player Vars")]
+    [Tooltip("The player's movement speed")]
+	public float speed;
+    [Tooltip("The game's controller")]
+    public GameObject gameController;
+
+    //The player's rigidbody(Used for ease)
+	private Rigidbody rb;
+
+    //The user's horizontal(left/right) input
+    private float horizontal;
+    //The user's vertical(up/down) input
+    private float vertical;
+    //The player's final movement the ball must move at
+    private Vector3 movement;
+
+
+
+	void Start()
+	{
+        //Set rb to the player's rigidbody on start
+        rb = gameObject.GetComponent<Rigidbody>();
+	}
+
+
+	void FixedUpdate ()
+    {
+        //Horizontal and Vertical inputs set to floats
+        horizontal = Input.GetAxis("Horizontal");
+        vertical = Input.GetAxis("Vertical");
+
+        //Turn input into movement vector
+        movement = new Vector3(horizontal, 0.0f, vertical);
+
+        //Add for to the ball to move in set direction
+        rb.AddForce(movement * speed);
+    }
+
+
+    void OnCollisionEnter(Collision collision)
+    {
+        if (collision.transform.tag == "Damage")
+        {
+            gameController.GetComponent<Game>().isDead = true;
+        }
+    }
+
+
+    void OnTriggerEnter(Collider other)
+    {
+        if(other.transform.tag == "PickUp")
+        {
+            other.gameObject.SetActive(false);
+            gameController.GetComponent<Game>().upScore();
+        }
+    }
+}
+ 
