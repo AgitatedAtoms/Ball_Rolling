@@ -1,0 +1,48 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+public class startMenuButtons : MonoBehaviour
+{
+    [Header("Buttons")]
+    [Tooltip("The Play Button")]
+    public Button playButton;
+    [Tooltip("The Quit Button")]
+    public Button quitButton;
+
+    [Header("Background Music")]
+    [Tooltip("The Start Menu's Music")]
+    public AudioSource startMenuMusic;
+
+
+    private void Start()
+    {
+        //Buttons
+        {
+            //Play Game
+            playButton = playButton.GetComponent<Button>();
+            playButton.onClick.AddListener(onPlay);
+
+            //Quit Game
+            quitButton = quitButton.GetComponent<Button>();
+            quitButton.onClick.AddListener(onQuit);
+        }
+
+        //Music
+
+    }
+
+    //Load game when play button is clicked
+    void onPlay()
+    {
+        SceneManager.LoadScene("MiniGame");
+    }
+
+    //Quit game when quit button is clicked
+    void onQuit()
+    {
+        Application.Quit();
+    }
+}
