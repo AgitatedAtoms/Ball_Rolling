@@ -1,0 +1,29 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class spinner : MonoBehaviour
+{
+    public float spinSpeed;
+    public float newAngle;
+    public bool clockwise = false;
+
+    private void Update()
+    {
+        if(clockwise)
+        {
+            newAngle = Time.deltaTime * spinSpeed;
+        }
+        else
+        {
+            newAngle = -(Time.deltaTime * spinSpeed);
+        }
+
+        transform.Rotate(0, newAngle, 0);
+
+        if(newAngle >= 360)
+        {
+            newAngle = 0;
+        }
+    }
+}
